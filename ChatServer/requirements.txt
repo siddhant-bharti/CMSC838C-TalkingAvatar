@@ -1,0 +1,4 @@
+TTS==0.22.0
+transformers==4.39.0.dev0
+accelerate==0.28.0
+datasets[audio]==2.18.0
