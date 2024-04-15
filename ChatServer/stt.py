@@ -5,7 +5,7 @@ from transformers import (
     pipeline
 )
 
-from ChatServer.utils import (
+from utils import (
     get_device,
     get_torch_dtype
 )
@@ -42,3 +42,7 @@ def run_stt(input_audio_path):
     the LLM.
     """
     return stt_pipe(input_audio_path)["text"]
+
+
+if __name__ == '__main__':
+    print(run_stt("oprah1.wav"))
