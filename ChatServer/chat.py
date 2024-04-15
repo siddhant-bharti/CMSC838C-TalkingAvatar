@@ -6,6 +6,7 @@ import time
 from threading import Thread
 
 import torch
+import torchaudio
 from transformers import (
     pipeline,
     AutoModelForCausalLM,
@@ -14,6 +15,7 @@ from transformers import (
 )
 
 from streaming_tts import run_tts_streaming
+from tts import run_tts
 
 multiprocessing.set_start_method('spawn', force=True)
 
@@ -103,12 +105,71 @@ def chat_with_oprah_streaming(user_input):
     if curr_sentence:
         sentences.append(sanitize_text(curr_sentence))
         curr_sentence = ""
-    print("All sentences are: ", sentences)
 
-    return generated_text
+    return sanitize_text(generated_text)
+
+
+def chat_with_oprah_streaming_audio(user_input, file_to_save, is_streaming=False):
+    prompt = get_prompt_for_llm(user_input)
+    inputs = llm_tok([prompt], return_tensors="pt").to("cuda")
+    streamer = TextIteratorStreamer(llm_tok, skip_prompt=True)
+    generation_kwargs = dict(inputs, streamer=streamer, max_new_tokens=1500)
+
+    thread = Thread(target=llm_model.generate, kwargs=generation_kwargs)
+    thread.start()
+
+    generated_text = ""
+    curr_sentence = ""
+    sentences = []
+    if is_streaming:
+        futures = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            for new_text in streamer:
+                # Append to the generated text
+                generated_text += new_text
+                curr_sentence += new_text
+
+                if is_sentence_end(curr_sentence):
+                    curr_sentence = sanitize_text(curr_sentence)
+                    sentences.append(curr_sentence)
+                    futures.append(executor.submit(run_tts_streaming, curr_sentence))
+                    curr_sentence = ""
+
+            if curr_sentence:
+                curr_sentence = sanitize_text(curr_sentence)
+                sentences.append(curr_sentence)
+                futures.append(executor.submit(run_tts_streaming, curr_sentence))
+                curr_sentence = ""
+            # Generate the audio
+            wav_chuncks = []
+            for future in concurrent.futures.as_completed(futures):
+                wav_chuncks.append(future.result())
+            wav = torch.cat(wav_chuncks, dim=0)
+            torchaudio.save(file_to_save, wav.squeeze().unsqueeze(0).cpu(), 24000)
+    else:
+        for new_text in streamer:
+            # Append to the generated text
+            generated_text += new_text
+            curr_sentence += new_text
+
+            if is_sentence_end(curr_sentence):
+                sentences.append(sanitize_text(curr_sentence))
+                curr_sentence = ""
+
+        if curr_sentence:
+            sentences.append(sanitize_text(curr_sentence))
+            curr_sentence = ""
+
+        # Save for non streaming way
+        run_tts(sanitize_text(generated_text), file_to_save)
+
+    thread.join()
+
+    return sanitize_text(generated_text)
 
 
 if __name__ == '__main__':
     while True:
         ask_me_something = input(">>Me: ")
-        print(sanitize_text(chat_with_oprah_streaming(ask_me_something)))
+        reply = chat_with_oprah_streaming(ask_me_something)
+        print(reply)
