@@ -123,7 +123,7 @@ def chat_with_oprah_streaming_audio(user_input, file_to_save, is_streaming=False
     sentences = []
     if is_streaming:
         futures = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             for new_text in streamer:
                 # Append to the generated text
                 generated_text += new_text
