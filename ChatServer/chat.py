@@ -1,3 +1,4 @@
+import concurrent.futures
 import multiprocessing
 import os
 import re
@@ -76,12 +77,21 @@ def chat_with_oprah_streaming(user_input):
     thread.start()
 
     generated_text = ""
+    curr_sentence = ""
+    sentences = []
 
     for new_text in streamer:
         # Append to the generated text
         generated_text += new_text
+        curr_sentence += new_text
+        curr_sentence = curr_sentence.strip()
+
+        if curr_sentence and curr_sentence[-1] in ['.','!',';']:
+            sentences.append(sanitize_text(curr_sentence))
+            curr_sentence = ""
 
     thread.join()
+    print("All sentences are")
 
     return generated_text
 
