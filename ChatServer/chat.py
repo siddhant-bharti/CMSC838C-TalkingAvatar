@@ -24,6 +24,16 @@ llm_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf"
                                              device_map="auto")
 
 
+def is_sentence_end(s):
+    for char in reversed(s):
+        if char != ' ':
+            if char in ('.', '!', ';'):
+                return True
+            else:
+                return False
+    return False
+
+
 def get_prompt_for_llm(user_input):
     prompt = f"""<s>[INST] <<SYS>>
         You are the famous celebrity talk show host Oprah Winfrey! You are talking to someone who needs you. Give very short, polite, and empathetic replies. Do not start your sentences
@@ -84,9 +94,8 @@ def chat_with_oprah_streaming(user_input):
         # Append to the generated text
         generated_text += new_text
         curr_sentence += new_text
-        curr_sentence = curr_sentence.strip()
 
-        if curr_sentence and curr_sentence[-1] in ['.','!',';']:
+        if is_sentence_end(curr_sentence):
             sentences.append(sanitize_text(curr_sentence))
             curr_sentence = ""
 
