@@ -91,7 +91,7 @@ def chat_with_oprah_streaming(user_input):
             curr_sentence = ""
 
     thread.join()
-    print("All sentences are")
+    print("All sentences are: ", sentences)
 
     return generated_text
 
