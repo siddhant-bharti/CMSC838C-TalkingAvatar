@@ -16,22 +16,24 @@ print("Computing speaker latents...")
 gpt_cond_latent, speaker_embedding = model.get_conditioning_latents(audio_path=["oprah1.wav"])
 
 print("Inference...")
-t0 = time.perf_counter()
-chunks = model.inference_stream(
-    "Oh no, I can tell you're feeling stressed!  It's completely normal to feel overwhelmed at times, but there are many things you can do to manage stress. Have you tried taking a few deep breaths, going for a walk, or practicing some relaxation techniques like meditation or yoga? These can really help calm your mind and body. 🧘‍♀️ If you ever need to talk about it, I'm here to listen. 🤗",
-    "en",
-    gpt_cond_latent,
-    speaker_embedding
-)
 
-wav_chuncks = []
-for i, chunk in enumerate(chunks):
-    if i == 0:
-        print(f"Time to first chunck: {time.perf_counter() - t0}")
-    print(f"Received chunk {i} of audio length {chunk.shape[-1]}")
-    wav_chuncks.append(chunk)
-    # torchaudio.save(f"stream_{i}.wav", chunk.squeeze().unsqueeze(0).cpu(), 24000)
-wav = torch.cat(wav_chuncks, dim=0)
-torchaudio.save("xtts_streaming.wav", wav.squeeze().unsqueeze(0).cpu(), 24000)
-t1 = time.perf_counter()
-print(f"Creating audio took {t1-t0} secs")
+def run_tts_streaming(text_to_speak, file_to_save):
+    t0 = time.perf_counter()
+    chunks = model.inference_stream(
+        text_to_speak,
+        "en",
+        gpt_cond_latent,
+        speaker_embedding
+    )
+
+    wav_chuncks = []
+    for i, chunk in enumerate(chunks):
+        if i == 0:
+            print(f"Time to first chunck: {time.perf_counter() - t0}")
+        print(f"Received chunk {i} of audio length {chunk.shape[-1]}")
+        wav_chuncks.append(chunk)
+        # torchaudio.save(f"stream_{i}.wav", chunk.squeeze().unsqueeze(0).cpu(), 24000)
+    wav = torch.cat(wav_chuncks, dim=0)
+    torchaudio.save(file_to_save, wav.squeeze().unsqueeze(0).cpu(), 24000)
+    t1 = time.perf_counter()
+    print(f"Creating audio took {t1-t0} secs")

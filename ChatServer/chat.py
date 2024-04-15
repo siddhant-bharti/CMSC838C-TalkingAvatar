@@ -1,25 +1,36 @@
+import multiprocessing
+import os
 import re
-
-import torch
-from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+import time
 from threading import Thread
 
-import multiprocessing
+import torch
+from transformers import (
+    pipeline,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    TextIteratorStreamer
+)
+
+from ChatServer.streaming_tts import run_tts_streaming
 
 multiprocessing.set_start_method('spawn', force=True)
 
-import time
-
-from tts import run_tts
-from ChatServer.streaming_tts import run_tts_streaming
-
-import os
-
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-tok = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", torch_dtype=torch.float16, token=True,
+llm_tok = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+llm_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", torch_dtype=torch.float16, token=True,
                                              device_map="auto")
+
+
+def get_prompt_for_llm(user_input):
+    prompt = f"""<s>[INST] <<SYS>>
+        You are the famous celebrity talk show host Oprah Winfrey! You are talking to someone who needs you. Give very short, polite, and empathetic replies. Do not start your sentences
+        with works like Oh and Ah. Directly being with the content. Use the following information to guide your responses:
+        <</SYS>>
+
+        What is your name? [/INST] My name is Oprah Winfrey </s><s>[INST] {user_input} [/INST]"""
+    return prompt
 
 
 # Function to simulate chat with Oprah Winfrey
@@ -56,73 +67,26 @@ def sanitize_text(generated_text):
 
 
 def chat_with_oprah_streaming(user_input):
-    prompt = f"""<s>[INST] <<SYS>>
-        You are the famous celebrity talk show host Oprah Winfrey! You are talking to someone who needs you. Give very short, polite, and empathetic replies. Do not start your sentences
-        with works like Oh and Ah. Directly being with the content. Use the following information to guide your responses:
-        <</SYS>>
-
-        What is your name? [/INST] My name is Oprah Winfrey </s><s>[INST] {user_input} [/INST]"""
-    inputs = tok([prompt], return_tensors="pt").to("cuda")
-    streamer = TextIteratorStreamer(tok, skip_prompt=True)
+    prompt = get_prompt_for_llm(user_input)
+    inputs = llm_tok([prompt], return_tensors="pt").to("cuda")
+    streamer = TextIteratorStreamer(llm_tok, skip_prompt=True)
     generation_kwargs = dict(inputs, streamer=streamer, max_new_tokens=1500)
 
-    processes = []
-
-    start_time = time.time()
-
-    # model_process = multiprocessing.Process(target=model.generate, kwargs=generation_kwargs)
-    # model_process.start()
-    # processes.append(model_process)
-
-    thread = Thread(target=model.generate, kwargs=generation_kwargs)
+    thread = Thread(target=llm_model.generate, kwargs=generation_kwargs)
     thread.start()
 
     generated_text = ""
-    sentences = []
 
-    index = 0
     for new_text in streamer:
-        # print(new_text, end='', flush=True)
-        new_text = sanitize_text(new_text)
-
         # Append to the generated text
         generated_text += new_text
 
-        if new_text == "":
-            continue
-
-        run_tts_streaming(generated_text, f"audio_chunk_{index}.wav")
-
-        generated_text = ""
-        index += 1
-
-        # Append to the generated audio
-        # call run_tts with new_text and file path like "{index}.wav"
-
-        # audio_process = multiprocessing.Process(target=run_tts, args=(new_text, f"audio_chunk_{index}.wav"))
-        # audio_process.start()
-        # processes.append(audio_process)
-
-    for process in processes:
-        process.join()
-
     thread.join()
 
-    end_time = time.time()
-
-    print(f"Total time taken: {end_time - start_time}")
-
-    # print("\n")
     return generated_text
 
 
 if __name__ == '__main__':
     while True:
         ask_me_something = input(">>Me: ")
-        user_input = f"""<s>[INST] <<SYS>>
-        You are the famous celebrity talk show host Oprah Winfrey! You are talking to someone who needs you. Give very short, polite, and empathetic replies. Do not start your sentences
-        with works like Oh and Ah. Directly being with the content. Use the following information to guide your responses:
-        <</SYS>>
-
-        What is your name? [/INST] My name is Oprah Winfrey </s><s>[INST] {ask_me_something} [/INST]"""
-        print(sanitize_text(chat_with_oprah_streaming(user_input)))
+        print(sanitize_text(chat_with_oprah_streaming(ask_me_something)))
