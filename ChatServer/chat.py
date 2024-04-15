@@ -142,7 +142,7 @@ def chat_with_oprah_streaming_audio(user_input, file_to_save, is_streaming=False
                 curr_sentence = ""
             # Generate the audio
             wav_chuncks = []
-            for future in concurrent.futures.as_completed(futures):
+            for future in futures:#concurrent.futures.as_completed(futures):
                 wav_chuncks.append(future.result())
             wav = torch.cat(wav_chuncks, dim=0)
             torchaudio.save(file_to_save, wav.squeeze().unsqueeze(0).cpu(), 24000)
