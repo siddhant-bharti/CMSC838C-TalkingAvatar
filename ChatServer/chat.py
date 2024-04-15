@@ -100,6 +100,9 @@ def chat_with_oprah_streaming(user_input):
             curr_sentence = ""
 
     thread.join()
+    if curr_sentence:
+        sentences.append(sanitize_text(curr_sentence))
+        curr_sentence = ""
     print("All sentences are: ", sentences)
 
     return generated_text
