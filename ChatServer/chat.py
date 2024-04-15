@@ -27,7 +27,7 @@ llm_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf"
 def is_sentence_end(s):
     for char in reversed(s):
         if char != ' ':
-            if char in ('.', '!', ';'):
+            if char in ('.', '!', ';', '?'):
                 return True
             else:
                 return False
