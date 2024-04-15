@@ -40,6 +40,7 @@ def run_tts_streaming(text_to_speak, file_to_save=None):
 
 
 if __name__ == '__main__':
-    text_to_speak = ask_me_something = input(">>Generate streaming audio for: ")
-    file_to_save = "./tts_testing_streaming.wav"
-    run_tts_streaming(text_to_speak, file_to_save)
+    while True:
+        text_to_speak = ask_me_something = input(">>Generate streaming audio for: ")
+        file_to_save = "./tts_testing_streaming.wav"
+        run_tts_streaming(text_to_speak, file_to_save)

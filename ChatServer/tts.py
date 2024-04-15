@@ -20,6 +20,7 @@ def run_tts(text_to_speak, file_to_save):
 
 
 if __name__ == '__main__':
-    text_to_speak = ask_me_something = input(">>Generate audio for: ")
-    file_to_save = "./tts_testing_vanilla.wav"
-    run_tts(text_to_speak, file_to_save)
+    while True:
+        text_to_speak = ask_me_something = input(">>Generate audio for: ")
+        file_to_save = "./tts_testing_vanilla.wav"
+        run_tts(text_to_speak, file_to_save)
