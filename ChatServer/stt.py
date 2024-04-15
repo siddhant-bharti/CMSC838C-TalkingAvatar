@@ -5,7 +5,7 @@ from transformers import (
     pipeline
 )
 
-from .utils import (
+from ChatServer.utils import (
     get_device,
     get_torch_dtype
 )
