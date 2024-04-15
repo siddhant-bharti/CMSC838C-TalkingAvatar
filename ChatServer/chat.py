@@ -12,7 +12,7 @@ from transformers import (
     TextIteratorStreamer
 )
 
-from ChatServer.streaming_tts import run_tts_streaming
+from streaming_tts import run_tts_streaming
 
 multiprocessing.set_start_method('spawn', force=True)
 
