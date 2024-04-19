@@ -41,7 +41,7 @@ def run_stt(input_audio_path):
     """We are not doing streaming or parallelization here because we want to send the entire transcript as context to
     the LLM.
     """
-    return stt_pipe(input_audio_path)["text"]
+    return stt_pipe(input_audio_path, generate_kwargs = {"language":"<|en|>","task":"transcribe"})["text"]
 
 
 if __name__ == '__main__':
