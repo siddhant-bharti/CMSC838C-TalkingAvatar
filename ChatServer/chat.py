@@ -147,6 +147,7 @@ def chat_with_oprah_streaming_audio(user_input, file_to_save, is_streaming=False
             wav = torch.cat(wav_chuncks, dim=0)
             torchaudio.save(file_to_save, wav.squeeze().unsqueeze(0).cpu(), 24000)
     else:
+        t1 = time.perf_counter()
         for new_text in streamer:
             # Append to the generated text
             generated_text += new_text
@@ -161,7 +162,11 @@ def chat_with_oprah_streaming_audio(user_input, file_to_save, is_streaming=False
             curr_sentence = ""
 
         # Save for non streaming way
+        t2 = time.perf_counter()
         run_tts(sanitize_text(generated_text), file_to_save)
+        t3 = time.perf_counter()
+        print(f"Time to create text outout: {t2-t1} secs")
+        print(f"Time to create speech outout: {t3-t2} secs")
 
     thread.join()
 
